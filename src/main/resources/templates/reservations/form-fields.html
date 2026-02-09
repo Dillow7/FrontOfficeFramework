@@ -1,0 +1,42 @@
+<!-- Fragment Thymeleaf pour les champs du formulaire -->
+<div th:fragment="formFields" xmlns:th="http://www.thymeleaf.org">
+    
+    <div class="form-group">
+        <label for="idClient">Client *</label>
+        <select id="idClient" name="idClient" class="form-control" required>
+            <option value="">-- Sélectionner un client --</option>
+            <option th:each="client : ${clients}" 
+                    th:value="${client.id}"
+                    th:text="${client.nom + ' ' + client.prenom + ' (' + client.id + ')'}"
+                    th:selected="${reservation.idClient == client.id}">
+            </option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="idHotel">Hôtel de destination *</label>
+        <select id="idHotel" name="idHotel" class="form-control" required>
+            <option value="">-- Sélectionner un hôtel --</option>
+            <option th:each="hotel : ${hotels}" 
+                    th:value="${hotel.id}"
+                    th:text="${hotel.nom + ' (ID: ' + hotel.id + ')'}"
+                    th:selected="${reservation.idHotel == hotel.id}">
+            </option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="nbPassager">Nombre de passagers *</label>
+        <input type="number" id="nbPassager" name="nbPassager" class="form-control" 
+               required min="1" max="10"
+               th:value="${reservation.nbPassager}">
+    </div>
+
+    <div class="form-group">
+        <label for="dateHeureArrive">Date et heure d'arrivée *</label>
+        <input type="datetime-local" id="dateHeureArrive" name="dateHeureArrive" class="form-control"
+               required
+               th:value="${reservation.dateHeureArrive != null ? (#temporals.format(reservation.dateHeureArrive, 'yyyy-MM-dd''T''HH:mm')) : ''}">
+    </div>
+
+</div>
