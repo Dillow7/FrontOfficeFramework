@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réservations de Voiture - FrontOffice</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <h1>🚗 Gestion des Réservations</h1>
+            </div>
+            <ul class="navbar-menu">
+                <li><a th:href="@{/reservations}">Réservations</a></li>
+                <li><a th:href="@{/reservations/create}" class="btn-primary">+ Nouvelle Réservation</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h2>Liste des Réservations</h2>
+            <p>Gestion complète des réservations de voitures</p>
+        </div>
+
+        <!-- Messages de succès/erreur -->
+        <div th:if="${param.success}" class="alert alert-success">
+            ✓ Opération réussie
+        </div>
+        <div th:if="${param.deleted}" class="alert alert-success">
+            ✓ Réservation supprimée avec succès
+        </div>
+        <div th:if="${param.error}" class="alert alert-danger">
+            ✗ Une erreur s'est produite
+        </div>
+
+        <!-- Formulaire de recherche et filtrage -->
+        <div class="search-section">
+            <h3>Recherche et Filtrage</h3>
+            <form th:action="@{/reservations/search}" method="POST" class="search-form">
+                <div class="form-group">
+                    <label for="idClient">Client:</label>
+                    <select id="idClient" name="idClient" class="form-control">
+                        <option value="">-- Tous les clients --</option>
+                        <option th:each="client : ${clients}" 
+                                th:value="${client.id}"
+                                th:text="${client.nom + ' ' + client.prenom}"
+                                th:selected="${searchedIdClient == client.id}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="idHotel">Hôtel:</label>
+                    <select id="idHotel" name="idHotel" class="form-control">
+                        <option value="">-- Tous les hôtels --</option>
+                        <option th:each="hotel : ${hotels}" 
+                                th:value="${hotel.id}"
+                                th:text="${hotel.nom}"
+                                th:selected="${searchedIdHotel == hotel.id}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="dateDebut">Date de début:</label>
+                    <input type="datetime-local" id="dateDebut" name="dateDebut" class="form-control" 
+                           th:value="${searchedDateDebut}">
+                </div>
+
+                <div class="form-group">
+                    <label for="dateFin">Date de fin:</label>
+                    <input type="datetime-local" id="dateFin" name="dateFin" class="form-control"
+                           th:value="${searchedDateFin}">
+                </div>
+
+                <button type="submit" class="btn btn-search">🔍 Rechercher</button>
+                <a th:href="@{/reservations}" class="btn btn-secondary">Réinitialiser</a>
+            </form>
+        </div>
+
+        <!-- Table des réservations -->
+        <div class="reservations-section">
+            <h3>Résultats (<span th:text="${#lists.size(reservations)}"></span> réservation(s))</h3>
+            
+            <div th:if="${#lists.isEmpty(reservations)}" class="alert alert-info">
+                ℹ️ Aucune réservation trouvée
+            </div>
+
+            <table th:unless="${#lists.isEmpty(reservations)}" class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Client</th>
+                        <th>Hôtel de destination</th>
+                        <th>Passagers</th>
+                        <th>Date/Heure d'arrivée</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="reservation : ${reservations}" class="table-row">
+                        <td class="id-cell" th:text="${reservation.id}"></td>
+                        <td th:text="${reservation.client != null ? reservation.client.nom + ' ' + reservation.client.prenom : 'N/A'}"></td>
+                        <td th:text="${reservation.hotel != null ? reservation.hotel.nom : 'N/A'}"></td>
+                        <td class="text-center" th:text="${reservation.nbPassager}"></td>
+                        <td th:text="${#temporals.format(reservation.dateHeureArrive, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td class="actions">
+                            <a th:href="@{/reservations/{id}(id=${reservation.id})}" class="btn btn-info" title="Voir détails">👁️</a>
+                            <a th:href="@{/reservations/{id}/edit(id=${reservation.id})}" class="btn btn-warning" title="Modifier">✏️</a>
+                            <a th:href="@{/reservations/{id}/delete(id=${reservation.id})}" class="btn btn-danger" title="Supprimer" onclick="return confirm('Êtes-vous sûr?')">🗑️</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 Système de Gestion de Réservations | FrontOffice</p>
+    </footer>
+</body>
+</html>
