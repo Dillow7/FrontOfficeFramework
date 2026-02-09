@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:if="${reservation.id == null}">Nouvelle Réservation - FrontOffice</title>
+    <title th:unless="${reservation.id == null}">Modifier Réservation #<span th:text="${reservation.id}"></span> - FrontOffice</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <h1>🚗 Gestion des Réservations</h1>
+            </div>
+            <ul class="navbar-menu">
+                <li><a th:href="@{/reservations}">Réservations</a></li>
+                <li><a th:href="@{/reservations/create}" class="btn-primary">+ Nouvelle Réservation</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h2 th:if="${reservation.id == null}">Créer une nouvelle réservation</h2>
+            <h2 th:unless="${reservation.id == null}">Modifier la réservation #<span th:text="${reservation.id}"></span></h2>
+            <a th:href="@{/reservations}" class="btn btn-secondary">← Retour</a>
+        </div>
+
+        <div th:if="${error}" class="alert alert-danger">
+            ✗ <span th:text="${error}"></span>
+        </div>
+
+        <form th:if="${reservation.id == null}" th:action="@{/reservations}" method="POST" class="form-section">
+            <div th:include="reservations/form-fields :: formFields"></div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">💾 Créer la réservation</button>
+                <a th:href="@{/reservations}" class="btn btn-secondary">Annuler</a>
+            </div>
+        </form>
+
+        <form th:unless="${reservation.id == null}" th:action="@{/reservations/{id}(id=${reservation.id})}" method="POST" class="form-section">
+            <div th:include="reservations/form-fields :: formFields"></div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">💾 Mettre à jour</button>
+                <a th:href="@{/reservations}" class="btn btn-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 Système de Gestion de Réservations | FrontOffice</p>
+    </footer>
+</body>
+</html>

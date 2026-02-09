@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détail Réservation - FrontOffice</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <h1>🚗 Gestion des Réservations</h1>
+            </div>
+            <ul class="navbar-menu">
+                <li><a th:href="@{/reservations}">Réservations</a></li>
+                <li><a th:href="@{/reservations/create}" class="btn-primary">+ Nouvelle Réservation</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h2>Détail de la Réservation #<span th:text="${reservation.id}"></span></h2>
+            <a th:href="@{/reservations}" class="btn btn-secondary">← Retour à la liste</a>
+        </div>
+
+        <div class="detail-section">
+            <div class="detail-card">
+                <h3>Informations Générales</h3>
+                
+                <div class="detail-row">
+                    <label>ID Réservation:</label>
+                    <span th:text="${reservation.id}"></span>
+                </div>
+
+                <div class="detail-row">
+                    <label>Date/Heure d'arrivée:</label>
+                    <span th:text="${#temporals.format(reservation.dateHeureArrive, 'dd/MM/yyyy HH:mm')}"></span>
+                </div>
+
+                <div class="detail-row">
+                    <label>Nombre de passagers:</label>
+                    <span th:text="${reservation.nbPassager}"></span>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3>Informations Client</h3>
+                
+                <div class="detail-row">
+                    <label>ID Client:</label>
+                    <span th:text="${reservation.idClient}"></span>
+                </div>
+
+                <div th:if="${reservation.client != null}">
+                    <div class="detail-row">
+                        <label>Nom Complet:</label>
+                        <span th:text="${reservation.client.nom + ' ' + reservation.client.prenom}"></span>
+                    </div>
+
+                    <div class="detail-row">
+                        <label>Téléphone:</label>
+                        <span th:text="${reservation.client.telephone}"></span>
+                    </div>
+
+                    <div class="detail-row" th:if="${reservation.client.email != null}">
+                        <label>Email:</label>
+                        <span th:text="${reservation.client.email}"></span>
+                    </div>
+                </div>
+
+                <div th:if="${reservation.client == null}">
+                    <p class="text-warning">⚠️ Informations client non disponibles</p>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h3>Hôtel de Destination</h3>
+                
+                <div class="detail-row">
+                    <label>ID Hôtel:</label>
+                    <span th:text="${reservation.idHotel}"></span>
+                </div>
+
+                <div th:if="${reservation.hotel != null}">
+                    <div class="detail-row">
+                        <label>Nom de l'Hôtel:</label>
+                        <span th:text="${reservation.hotel.nom}"></span>
+                    </div>
+                </div>
+
+                <div th:if="${reservation.hotel == null}">
+                    <p class="text-warning">⚠️ Informations hôtel non disponibles</p>
+                </div>
+            </div>
+
+            <div class="actions-section">
+                <a th:href="@{/reservations/{id}/edit(id=${reservation.id})}" class="btn btn-primary">✏️ Modifier cette réservation</a>
+                <a th:href="@{/reservations/{id}/delete(id=${reservation.id})}" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette réservation?')">🗑️ Supprimer</a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 Système de Gestion de Réservations | FrontOffice</p>
+    </footer>
+</body>
+</html>
