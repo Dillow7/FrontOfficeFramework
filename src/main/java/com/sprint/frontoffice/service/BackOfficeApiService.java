@@ -1,12 +1,18 @@
 package com.sprint.frontoffice.service;
 
+import com.sprint.frontoffice.dto.VehicleDTO;
 import com.sprint.frontoffice.entity.Client;
 import com.sprint.frontoffice.entity.Hotel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import java.util.List;
 
 /**
@@ -18,11 +24,35 @@ public class BackOfficeApiService {
     
     @Value("${backoffice.api.baseurl}")
     private String baseUrl;
+
+    @Value("${backoffice.api.token}")
+    private String apiToken;
     
     private final RestTemplate restTemplate;
     
     public BackOfficeApiService() {
         this.restTemplate = new RestTemplate();
+    }
+
+    public List<VehicleDTO> getAllVehiclesFromBackOffice() {
+        try {
+            String url = baseUrl + "/vehicles";
+            log.info("Appel API BackOffice: {}", url);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("token", apiToken);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<VehicleDTO[]> response = restTemplate.exchange(url, HttpMethod.GET, entity, VehicleDTO[].class);
+            VehicleDTO[] vehicles = response.getBody();
+            return vehicles != null ? List.of(vehicles) : List.of();
+        } catch (HttpClientErrorException e) {
+            log.error("Erreur API BackOffice (getAllVehicles): status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw e;
+        } catch (RestClientException e) {
+            log.error("Erreur réseau lors de la récupération des véhicules: {}", e.getMessage());
+            throw e;
+        }
     }
     
     /**
