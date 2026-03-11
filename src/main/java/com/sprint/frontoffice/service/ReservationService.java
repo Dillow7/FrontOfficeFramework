@@ -1,11 +1,13 @@
 package com.sprint.frontoffice.service;
 
+import com.sprint.frontoffice.entity.Client;
+import com.sprint.frontoffice.entity.Hotel;
 import com.sprint.frontoffice.entity.Reservation;
-import com.sprint.frontoffice.repository.ReservationRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,9 +19,6 @@ import java.util.Optional;
 public class ReservationService {
     
     @Autowired
-    private ReservationRepository reservationRepository;
-    
-    @Autowired
     private BackOfficeApiService backOfficeApiService;
     
     /**
@@ -27,7 +26,7 @@ public class ReservationService {
      */
     public List<Reservation> getAllReservations() {
         log.info("Récupération de toutes les réservations");
-        List<Reservation> reservations = reservationRepository.findAll();
+        List<Reservation> reservations = backOfficeApiService.getAllReservationsFromBackOffice();
         enrichReservations(reservations);
         return reservations;
     }
@@ -37,11 +36,12 @@ public class ReservationService {
      */
     public Optional<Reservation> getReservationById(Integer id) {
         log.info("Récupération de la réservation avec l'ID: {}", id);
-        Optional<Reservation> reservation = reservationRepository.findById(id);
-        if (reservation.isPresent()) {
-            enrichReservation(reservation.get());
+        Reservation r = backOfficeApiService.getReservationFromBackOffice(id);
+        if (r == null) {
+            return Optional.empty();
         }
-        return reservation;
+        enrichReservation(r);
+        return Optional.of(r);
     }
     
     /**
@@ -49,7 +49,12 @@ public class ReservationService {
      */
     public List<Reservation> getReservationsByClient(String idClient) {
         log.info("Récupération des réservations pour le client: {}", idClient);
-        List<Reservation> reservations = reservationRepository.findByIdClient(idClient);
+        List<Reservation> reservations = new ArrayList<>();
+        for (Reservation r : backOfficeApiService.getAllReservationsFromBackOffice()) {
+            if (idClient != null && idClient.equals(r.getIdClient())) {
+                reservations.add(r);
+            }
+        }
         enrichReservations(reservations);
         return reservations;
     }
@@ -59,7 +64,12 @@ public class ReservationService {
      */
     public List<Reservation> getReservationsByHotel(Integer idHotel) {
         log.info("Récupération des réservations pour l'hôtel: {}", idHotel);
-        List<Reservation> reservations = reservationRepository.findByIdHotel(idHotel);
+        List<Reservation> reservations = new ArrayList<>();
+        for (Reservation r : backOfficeApiService.getAllReservationsFromBackOffice()) {
+            if (idHotel != null && idHotel.equals(r.getIdHotel())) {
+                reservations.add(r);
+            }
+        }
         enrichReservations(reservations);
         return reservations;
     }
@@ -69,7 +79,16 @@ public class ReservationService {
      */
     public List<Reservation> getReservationsByDateRange(LocalDateTime dateDebut, LocalDateTime dateFin) {
         log.info("Récupération des réservations entre {} et {}", dateDebut, dateFin);
-        List<Reservation> reservations = reservationRepository.findByDateRange(dateDebut, dateFin);
+        List<Reservation> reservations = new ArrayList<>();
+        for (Reservation r : backOfficeApiService.getAllReservationsFromBackOffice()) {
+            if (r.getDateHeureArrive() == null) {
+                continue;
+            }
+            if ((dateDebut == null || !r.getDateHeureArrive().isBefore(dateDebut))
+                    && (dateFin == null || !r.getDateHeureArrive().isAfter(dateFin))) {
+                reservations.add(r);
+            }
+        }
         enrichReservations(reservations);
         return reservations;
     }
@@ -80,25 +99,29 @@ public class ReservationService {
     public List<Reservation> searchReservations(String idClient, Integer idHotel, LocalDateTime dateDebut, LocalDateTime dateFin) {
         log.info("Recherche des réservations avec filtres - Client: {}, Hôtel: {}, Dates: {} à {}", 
                  idClient, idHotel, dateDebut, dateFin);
-        
-        List<Reservation> reservations;
-        
-        if (idClient != null && !idClient.isEmpty() && dateDebut != null && dateFin != null) {
-            reservations = reservationRepository.findByIdClientAndDateRange(idClient, dateDebut, dateFin);
-        } else if (idHotel != null && dateDebut != null && dateFin != null) {
-            reservations = reservationRepository.findByIdHotelAndDateRange(idHotel, dateDebut, dateFin);
-        } else if (idClient != null && !idClient.isEmpty()) {
-            reservations = reservationRepository.findByIdClient(idClient);
-        } else if (idHotel != null) {
-            reservations = reservationRepository.findByIdHotel(idHotel);
-        } else if (dateDebut != null && dateFin != null) {
-            reservations = reservationRepository.findByDateRange(dateDebut, dateFin);
-        } else {
-            reservations = reservationRepository.findAll();
+
+        List<Reservation> out = new ArrayList<>();
+        for (Reservation r : backOfficeApiService.getAllReservationsFromBackOffice()) {
+            if (idClient != null && !idClient.isEmpty() && (r.getIdClient() == null || !idClient.equals(r.getIdClient()))) {
+                continue;
+            }
+            if (idHotel != null && (r.getIdHotel() == null || !idHotel.equals(r.getIdHotel()))) {
+                continue;
+            }
+            if ((dateDebut != null || dateFin != null) && r.getDateHeureArrive() == null) {
+                continue;
+            }
+            if (dateDebut != null && r.getDateHeureArrive().isBefore(dateDebut)) {
+                continue;
+            }
+            if (dateFin != null && r.getDateHeureArrive().isAfter(dateFin)) {
+                continue;
+            }
+            out.add(r);
         }
-        
-        enrichReservations(reservations);
-        return reservations;
+
+        enrichReservations(out);
+        return out;
     }
     
     /**
@@ -106,7 +129,8 @@ public class ReservationService {
      */
     public Reservation createReservation(Reservation reservation) {
         log.info("Création d'une nouvelle réservation");
-        return reservationRepository.save(reservation);
+        boolean ok = backOfficeApiService.createReservationInBackOffice(reservation);
+        return ok ? reservation : null;
     }
     
     /**
@@ -114,16 +138,16 @@ public class ReservationService {
      */
     public Reservation updateReservation(Integer id, Reservation reservationDetails) {
         log.info("Mise à jour de la réservation avec l'ID: {}", id);
-        Optional<Reservation> reservation = reservationRepository.findById(id);
-        if (reservation.isPresent()) {
-            Reservation r = reservation.get();
-            if (reservationDetails.getIdClient() != null) r.setIdClient(reservationDetails.getIdClient());
-            if (reservationDetails.getNbPassager() != null) r.setNbPassager(reservationDetails.getNbPassager());
-            if (reservationDetails.getDateHeureArrive() != null) r.setDateHeureArrive(reservationDetails.getDateHeureArrive());
-            if (reservationDetails.getIdHotel() != null) r.setIdHotel(reservationDetails.getIdHotel());
-            return reservationRepository.save(r);
+        Reservation r = backOfficeApiService.getReservationFromBackOffice(id);
+        if (r == null) {
+            return null;
         }
-        return null;
+        if (reservationDetails.getIdClient() != null) r.setIdClient(reservationDetails.getIdClient());
+        if (reservationDetails.getNbPassager() != null) r.setNbPassager(reservationDetails.getNbPassager());
+        if (reservationDetails.getDateHeureArrive() != null) r.setDateHeureArrive(reservationDetails.getDateHeureArrive());
+        if (reservationDetails.getIdHotel() != null) r.setIdHotel(reservationDetails.getIdHotel());
+        boolean ok = backOfficeApiService.updateReservationInBackOffice(id, r);
+        return ok ? r : null;
     }
     
     /**
@@ -131,7 +155,7 @@ public class ReservationService {
      */
     public void deleteReservation(Integer id) {
         log.info("Suppression de la réservation avec l'ID: {}", id);
-        reservationRepository.deleteById(id);
+        backOfficeApiService.deleteReservationInBackOffice(id);
     }
     
     /**
